@@ -17,14 +17,25 @@ void main() async {
 class GameTemplate extends FlameGame
     with HasKeyboardHandlerComponents, HasCollisionDetection {
   late Ship shipPlayer;
-  late Square squareEnemy;
+  // Add 3 squares to the game
+  late List<Square> squareEnemies;
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
     add(HeaderTitle());
     add(shipPlayer = Ship(await loadSprite('triangle.png')));
-    add(squareEnemy = Square(await loadSprite('square.png')));
+
+    // Add 3 squares at different X positions
+    final squareSprite = await loadSprite('square.png');
+    squareEnemies = [
+      Square(squareSprite, 100.0),
+      Square(squareSprite, 300.0),
+      Square(squareSprite, 500.0),
+    ];
+    for (final square in squareEnemies) {
+      add(square);
+    }
 
     // Load and cache the audio
     await FlameAudio.audioCache.load('ball.wav');
@@ -124,11 +135,11 @@ class Square extends SpriteComponent
   double screenPosition = 0.0;
   bool isCollision = false;
 
-  Square(Sprite sprite) {
+  Square(Sprite sprite, double xPosition) {
     debugMode = true;
     this.sprite = sprite;
     size = Vector2(50.0, 50.0);
-    position = Vector2(100.0, 100.0);
+    position = Vector2(xPosition, 100.0);
     add(RectangleHitbox());
   }
 
