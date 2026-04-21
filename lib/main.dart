@@ -6,6 +6,8 @@ import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flame_audio/flame_audio.dart';
+// add dart:math for random number generation
+import 'dart:math';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -131,7 +133,8 @@ class Ship extends SpriteComponent
 
 class Square extends SpriteComponent
     with HasGameReference<GameTemplate>, CollisionCallbacks {
-  final spriteVelocity = 100;
+  // Set a random velocity for each square
+  late int spriteVelocity;
   double screenPosition = 0.0;
   bool isCollision = false;
 
@@ -139,6 +142,8 @@ class Square extends SpriteComponent
     debugMode = true;
     this.sprite = sprite;
     size = Vector2(50.0, 50.0);
+    // Set a random velocity between 50 and 250
+    spriteVelocity = Random().nextInt(200) + 50;
     position = Vector2(xPosition, 100.0);
     add(RectangleHitbox());
   }
@@ -159,6 +164,8 @@ class Square extends SpriteComponent
       position.y = screenPosition;
     } else {
       position.y = 0.0;
+      // Set a new random velocity when the square resets to the top
+      spriteVelocity = Random().nextInt(200) + 50;
     }
 
     if (isCollision) {
