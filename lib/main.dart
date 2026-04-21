@@ -39,7 +39,7 @@ class GameTemplate extends FlameGame
       return;
     }
 
-    if (hitCount > 5 || totalAttempts <= 0) {
+    if (hitCount >= 5 || totalAttempts <= 0) {
       isGameOver = true;
 
       // Determine status based on remaining points
@@ -51,7 +51,7 @@ class GameTemplate extends FlameGame
       } else if (score >= 40) {
         status = 'Regular';
       } else {
-        status = 'Bad';
+        status = 'Get Good';
       }
 
       final double centerX = size.x / 2;
@@ -181,6 +181,9 @@ class Ship extends SpriteComponent
   bool upPressed = false;
   bool downPressed = false;
   bool isCollision = false;
+  // cooldown to avoid sound overlap when moving rapidly
+  double _soundCooldown = 0.0;
+  static const double _soundCooldownDuration = 0.15;
 
   Ship(Sprite sprite) {
     debugMode = true;
@@ -223,11 +226,17 @@ class Ship extends SpriteComponent
   void update(double dt) {
     super.update(dt);
 
+    // decrease sound cooldown each frame
+    if (_soundCooldown > 0) _soundCooldown -= dt;
+
     if (leftPressed == true) {
       screenPosition = position.x - spriteVelocity * dt;
       if (screenPosition > 0 + width / 2) {
         position.x = screenPosition;
-        FlameAudio.play('ball.wav');
+        if (_soundCooldown <= 0) {
+          FlameAudio.play('ball.wav');
+          _soundCooldown = _soundCooldownDuration;
+        }
       }
       leftPressed = false;
     }
@@ -235,7 +244,10 @@ class Ship extends SpriteComponent
       screenPosition = position.x + spriteVelocity * dt;
       if (screenPosition < game.size.x - width / 2) {
         position.x = screenPosition;
-        FlameAudio.play('ball.wav');
+        if (_soundCooldown <= 0) {
+          FlameAudio.play('ball.wav');
+          _soundCooldown = _soundCooldownDuration;
+        }
       }
       rightPressed = false;
     }
@@ -243,7 +255,10 @@ class Ship extends SpriteComponent
       screenPosition = position.y - spriteVelocity * dt;
       if (screenPosition > 0 + height / 2) {
         position.y = screenPosition;
-        FlameAudio.play('ball.wav');
+        if (_soundCooldown <= 0) {
+          FlameAudio.play('ball.wav');
+          _soundCooldown = _soundCooldownDuration;
+        }
       }
       upPressed = false;
     }
@@ -251,7 +266,10 @@ class Ship extends SpriteComponent
       screenPosition = position.y + spriteVelocity * dt;
       if (screenPosition < game.size.y - height / 2) {
         position.y = screenPosition;
-        FlameAudio.play('ball.wav');
+        if (_soundCooldown <= 0) {
+          FlameAudio.play('ball.wav');
+          _soundCooldown = _soundCooldownDuration;
+        }
       }
       downPressed = false;
     }
@@ -288,8 +306,8 @@ class Square extends SpriteComponent
     position.x = Random().nextDouble() * (game.size.x - width);
     position.y = 110.0;
     spriteVelocity = Random().nextInt(200) + 50;
-    // Decrease the score by 20 points on collision
-    game.score -= 20;
+    // Decrease the score by 20 points on collision, minimum 0
+    game.score = (game.score - 20).clamp(0, 100);
     // Increase hit count by 1 on collision
     game.hitCount += 1;
     // Update the score text
@@ -328,30 +346,24 @@ class Square extends SpriteComponent
   }
 }
 
-class HeaderTitle extends TextBoxComponent {
-  final double xHeaderPosition = 100.0;
-  final double yHeaderPosition = 20.0;
-
-  final textPaint = TextPaint(
-    style: const TextStyle(
-      color: Colors.white,
-      fontSize: 22.0,
-      fontFamily: 'Awesome Font',
-    ),
-  );
-
-  HeaderTitle() {
-    position = Vector2(xHeaderPosition, yHeaderPosition);
-  }
+class HeaderTitle extends TextComponent {
+  HeaderTitle()
+    : super(
+        text: 'Super Square Attack',
+        anchor: Anchor.topCenter,
+        position: Vector2(0, 20.0),
+        textRenderer: TextPaint(
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22.0,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
 
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
     position.x = size.x / 2;
-  }
-
-  @override
-  void render(Canvas canvas) {
-    textPaint.render(canvas, "Super Square Attack", position);
   }
 }
