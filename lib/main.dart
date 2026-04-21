@@ -21,11 +21,37 @@ class GameTemplate extends FlameGame
   late Ship shipPlayer;
   // Add 3 squares to the game
   late List<Square> squareEnemies;
+  // add a initial score variable
+  int score = 100;
+  // add a global attempts counter (3 squares * 10)
+  int totalAttempts = 30;
+  // show the score component on the screen
+  late TextComponent scoreText;
+  // show the attempts component on the screen
+  late TextComponent attemptsText;
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
     add(HeaderTitle());
+    // add the score text and initialize it with the initial score, position, style, color and font size
+    scoreText = TextComponent(
+      text: 'Score: $score',
+      position: Vector2(10.0, 50.0),
+      textRenderer: TextPaint(
+        style: const TextStyle(color: Colors.white, fontSize: 22.0),
+      ),
+    );
+    add(scoreText);
+    // show the attempts text on the screen, initialize it with the total attempts, position, style, color and font size
+    attemptsText = TextComponent(
+      text: 'Attempts: $totalAttempts',
+      position: Vector2(10.0, 80.0),
+      textRenderer: TextPaint(
+        style: const TextStyle(color: Colors.white, fontSize: 22.0),
+      ),
+    );
+    add(attemptsText);
     add(shipPlayer = Ship(await loadSprite('triangle.png')));
 
     // Add 3 squares at different X positions
@@ -152,6 +178,10 @@ class Square extends SpriteComponent
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
     isCollision = true;
+    // Decrease the score by 20 points on collision
+    game.score -= 20;
+    // Update the score text
+    game.scoreText.text = 'Score: ${game.score}';
   }
 
   @override
@@ -166,6 +196,12 @@ class Square extends SpriteComponent
       position.y = 0.0;
       // Set a new random velocity when the square resets to the top
       spriteVelocity = Random().nextInt(200) + 50;
+
+      // Decrease the total attempts by 1 when the square resets to the top
+      if (game.totalAttempts > 0) {
+        game.totalAttempts -= 1;
+      }
+      game.attemptsText.text = 'Attempts: ${game.totalAttempts}';
     }
 
     if (isCollision) {
