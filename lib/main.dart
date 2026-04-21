@@ -25,19 +25,107 @@ class GameTemplate extends FlameGame
   int score = 100;
   // add a global attempts counter (3 squares * 10)
   int totalAttempts = 30;
+  // count total hits received by the triangle
+  int hitCount = 0;
+  // control game over status
+  bool isGameOver = false;
   // show the score component on the screen
   late TextComponent scoreText;
   // show the attempts component on the screen
   late TextComponent attemptsText;
 
+  void checkGameOver() {
+    if (isGameOver) {
+      return;
+    }
+
+    if (hitCount > 5 || totalAttempts <= 0) {
+      isGameOver = true;
+
+      // Determine status based on remaining points
+      String status;
+      if (score >= 80) {
+        status = 'Excellent!';
+      } else if (score >= 60) {
+        status = 'Good';
+      } else if (score >= 40) {
+        status = 'Regular';
+      } else {
+        status = 'Bad';
+      }
+
+      final double centerX = size.x / 2;
+      final double centerY = size.y / 2;
+
+      final statsStyle = TextPaint(
+        style: const TextStyle(color: Colors.white, fontSize: 22.0),
+      );
+
+      // Draw background box for the stats popup
+      add(
+        RectangleComponent(
+          position: Vector2(centerX - 130, centerY - 100),
+          size: Vector2(300, 200),
+          paint: Paint()..color = const Color(0xDD1A1A2E),
+        ),
+      );
+
+      // Show game over title
+      add(
+        TextComponent(
+          text: 'GAME OVER',
+          position: Vector2(centerX - 100, centerY - 80),
+          textRenderer: TextPaint(
+            style: const TextStyle(
+              color: Colors.red,
+              fontSize: 40.0,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+
+      // Show hits received
+      add(
+        TextComponent(
+          text: 'Hits received: $hitCount',
+          position: Vector2(centerX - 100, centerY - 20),
+          textRenderer: statsStyle,
+        ),
+      );
+
+      // Show remaining points
+      add(
+        TextComponent(
+          text: 'Remaining points: $score',
+          position: Vector2(centerX - 100, centerY + 15),
+          textRenderer: statsStyle,
+        ),
+      );
+
+      // Show status based on remaining points
+      add(
+        TextComponent(
+          text: 'Status: $status',
+          position: Vector2(centerX - 100, centerY + 50),
+          textRenderer: statsStyle,
+        ),
+      );
+
+      // Wait one frame so the text renders before pausing
+      Future.delayed(const Duration(milliseconds: 100), () => pauseEngine());
+    }
+  }
+
   @override
   Future<void> onLoad() async {
-    super.onLoad();
+    await super.onLoad();
     add(HeaderTitle());
     // add the score text and initialize it with the initial score, position, style, color and font size
     scoreText = TextComponent(
       text: 'Score: $score',
-      position: Vector2(10.0, 50.0),
+      anchor: Anchor.topCenter,
+      position: Vector2(size.x / 2, 50.0),
       textRenderer: TextPaint(
         style: const TextStyle(color: Colors.white, fontSize: 22.0),
       ),
@@ -46,7 +134,8 @@ class GameTemplate extends FlameGame
     // show the attempts text on the screen, initialize it with the total attempts, position, style, color and font size
     attemptsText = TextComponent(
       text: 'Attempts: $totalAttempts',
-      position: Vector2(10.0, 80.0),
+      anchor: Anchor.topCenter,
+      position: Vector2(size.x / 2, 80.0),
       textRenderer: TextPaint(
         style: const TextStyle(color: Colors.white, fontSize: 22.0),
       ),
@@ -115,6 +204,7 @@ class Ship extends SpriteComponent
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
+    position.x = size.x / 2;
     position.y = size.y / 2;
   }
 
@@ -168,20 +258,32 @@ class Square extends SpriteComponent
     debugMode = true;
     this.sprite = sprite;
     size = Vector2(50.0, 50.0);
+    anchor = Anchor.center;
     // Set a random velocity between 50 and 250
     spriteVelocity = Random().nextInt(200) + 50;
-    position = Vector2(xPosition, 100.0);
+    position = Vector2(xPosition, 110.0);
     add(RectangleHitbox());
   }
 
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
+    if (isCollision == true || game.isGameOver == true) {
+      return;
+    }
+
     isCollision = true;
+    // Reset the square position to the top with a random X on collision
+    position.x = Random().nextDouble() * (game.size.x - width);
+    position.y = 110.0;
+    spriteVelocity = Random().nextInt(200) + 50;
     // Decrease the score by 20 points on collision
     game.score -= 20;
+    // Increase hit count by 1 on collision
+    game.hitCount += 1;
     // Update the score text
     game.scoreText.text = 'Score: ${game.score}';
+    game.checkGameOver();
   }
 
   @override
@@ -193,7 +295,9 @@ class Square extends SpriteComponent
     if (screenPosition < game.size.y - height / 2) {
       position.y = screenPosition;
     } else {
-      position.y = 0.0;
+      // Reset position to the top with a random X
+      position.x = Random().nextDouble() * (game.size.x - width);
+      position.y = 110.0;
       // Set a new random velocity when the square resets to the top
       spriteVelocity = Random().nextInt(200) + 50;
 
@@ -202,6 +306,7 @@ class Square extends SpriteComponent
         game.totalAttempts -= 1;
       }
       game.attemptsText.text = 'Attempts: ${game.totalAttempts}';
+      game.checkGameOver();
     }
 
     if (isCollision) {
@@ -226,6 +331,12 @@ class HeaderTitle extends TextBoxComponent {
 
   HeaderTitle() {
     position = Vector2(xHeaderPosition, yHeaderPosition);
+  }
+
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    position.x = size.x / 2;
   }
 
   @override
