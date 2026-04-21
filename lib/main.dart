@@ -65,7 +65,7 @@ class GameTemplate extends FlameGame
       add(
         RectangleComponent(
           position: Vector2(centerX - 130, centerY - 100),
-          size: Vector2(300, 200),
+          size: Vector2(300, 230),
           paint: Paint()..color = const Color(0xDD1A1A2E),
         ),
       );
@@ -109,6 +109,17 @@ class GameTemplate extends FlameGame
           text: 'Status: $status',
           position: Vector2(centerX - 100, centerY + 50),
           textRenderer: statsStyle,
+        ),
+      );
+
+      // Show restart instructions
+      add(
+        TextComponent(
+          text: 'Press F5 to restart the game',
+          position: Vector2(centerX - 100, centerY + 85),
+          textRenderer: TextPaint(
+            style: const TextStyle(color: Colors.white70, fontSize: 16.0),
+          ),
         ),
       );
 
